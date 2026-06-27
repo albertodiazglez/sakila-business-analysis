@@ -7,14 +7,15 @@ Análisis de negocio sobre la base de datos Sakila (alquiler de películas), res
 El proyecto ha evolucionado en dos soluciones analíticas interactivas:
 
 * 📊 **Versión 2 (Recomendada):** [🔗 Dashboard Interactivo en Looker Studio](https://datastudio.google.com/reporting/2e5b8a6d-262e-4262-8889-9ff296432986)
+* 🗃️ **Dataset v2:** [🔗 Tabla Desnormalizada y Limpia en Google Sheets](https://docs.google.com/spreadsheets/d/1_HzqaoR0-CMprCLeIgRm3JKXNrsRdPcbMC31Ff9K4gs/edit?usp=sharing)
 * 📑 **Versión 1 (Inicial):** [Reporte Estático en Google Sheets](https://docs.google.com/spreadsheets/d/1fhx2m5w2Ie1kjdXPon4QcrPVehPwSF55HTyJdh7a0xI/edit)
 
 ## Dashboards Ejecutivos
 
 ### 🔹 Versión 2: Centro de Control Dinámico (Looker Studio)
-![Dashboard Looker Studio](dashboard-looker.png)
+![Dashboard Looker Studio](images/dashboard_looker(v2).png)
 ### 🔹 Versión 1: Reporte Tabular (Google Sheets)
-![Dashboard Sakila BI](dashboard-sakila.png)
+![Dashboard Sakila BI](images/dashboard_sakila(v1).png)
 
 > Nota: el último mes de la serie temporal (2006-02) corresponde a un periodo parcial dentro del dataset original de Sakila, lo que explica la caída brusca de facturación frente al resto de meses.
 
