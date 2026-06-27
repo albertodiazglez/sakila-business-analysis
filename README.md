@@ -1,22 +1,77 @@
-# Análisis de la base de datos Sakila — SQL + Dashboard
+# Proyecto Análsis de datos Sakila BI: Solución End-to-End con SQL, Google Sheets y Looker Studio
+ 
+Análisis de negocio sobre la base de datos Sakila (alquiler de películas), resolviendo preguntas de negocio reales mediante SQL y construyendo un ecosistema de Dashboards ejecutivos para la toma de decisiones.
 
-Análisis de negocio sobre la base de datos Sakila (alquiler de películas), resolviendo preguntas de negocio reales mediante SQL y construyendo un dashboard ejecutivo en Google Sheets.
+## 📈 Enlaces a los Entornos de Business Intelligence
 
-🔗 **Dashboard:** [Google Sheets](https://docs.google.com/spreadsheets/d/1fhx2m5w2Ie1kjdXPon4QcrPVehPwSF55HTyJdh7a0xI/edit)
+El proyecto ha evolucionado en dos soluciones analíticas interactivas:
 
-## Dashboard
+* 📊 **Versión 2 (Recomendada):** [🔗 Dashboard Interactivo en Looker Studio](https://datastudio.google.com/reporting/2e5b8a6d-262e-4262-8889-9ff296432986)
+* 📑 **Versión 1 (Inicial):** [Reporte Estático en Google Sheets](https://docs.google.com/spreadsheets/d/1fhx2m5w2Ie1kjdXPon4QcrPVehPwSF55HTyJdh7a0xI/edit)
 
+## Dashboards Ejecutivos
+
+### 🔹 Versión 2: Centro de Control Dinámico (Looker Studio)
+![Dashboard Looker Studio](dashboard-looker.png)
+### 🔹 Versión 1: Reporte Tabular (Google Sheets)
 ![Dashboard Sakila BI](dashboard-sakila.png)
 
 > Nota: el último mes de la serie temporal (2006-02) corresponde a un periodo parcial dentro del dataset original de Sakila, lo que explica la caída brusca de facturación frente al resto de meses.
 
-## Resumen ejecutivo
+## Resumen ejecutivo (métricas Validadas v2)
+| Facturación total (Neto) | Clientes Únicos | Ticket promedio | Total alquileres | Duración Media | Alquileres Activos |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **67.406,56 €** | **599** | **4,20 €** | **16.044** | **5,03 Días** | **183** |
 
-| Facturación total | Clientes fieles | Ticket promedio | Total alquileres |
-|---|---|---|---|
-| 67.416,51 € | 599 | 4,20 € | 16.044 |
+---
+## 🔍 Control de Calidad de Datos & Auditoría (QA)
 
-## Preguntas de negocio y consultas SQL
+Antes de conectar los datos al entorno visual de la Versión 2, se realizó una auditoría profunda del dataset original de Sakila, detectando dos anomalías críticas que fueron resueltas para proteger la integridad del análisis:
+
+### 🪙 1. Conciliación Financiera (Discrepancia de 9,95 €)
+Al auditar la facturación bruta total de la tabla `payment`, aparecía un desfase no idnetificado en la versión 1 de **9,95 €** que no cruzaba con los registros de alquiler. Mediante rastreo SQL se descubrió que correspondía exactamente a **5 pagos huérfanos que carecían de un `rental_id` asociado**. 
+* **Acción correctiva:** Se aplicó un `INNER JOIN` estricto en el modelo analítico para procesar únicamente ingresos vinculados a alquileres reales y verificados, aislando los 9,95 € como una incidencia del sistema transaccional de origen.
+
+### ⏳ 2. Descubrimiento del Efecto de Corte de Datos 
+Al analizar los días de duración de los alquileres, saltaron las alarmas por **183 registros con la fecha de devolución en blanco (nulos)**. 
+* **El Insight:** Al realizar un análisis de frecuencia temporal, se descubrió que **182 de esos casos ocurrieron de forma síncrona el 14/02/2006** (la última fecha registrada en el histórico). Esto demostró de forma matemática que no se trataba de pérdidas de stock o robos, sino de un efecto de corte de datos: el dataset finaliza abruptamente mientras el videoclub operaba, dejando esos 183 alquileres marcados correctamente como **"Alquileres Activos"** en manos de los clientes.
+
+---
+
+## 🛠️ Query SQl de Desnormalización (Versión 2)
+Para poder alimentar los filtros cruzados en tiempo real de Looker Studio (Tiendas, Gerentes, Categorías y Países), se diseñó esta consulta avanzada que unifica el modelo relacional en una única tabla analítica, controlando los nulos y aplicando los filtros de auditoría financiera definidos en el proceso de QA:
+```sql
+SELECT 
+    p.payment_id AS ID_Pago,
+    strftime('%Y-%m-%d', p.payment_date) AS Fecha_Completa,
+    strftime('%Y-%m', p.payment_date) AS Año_Mes,
+    p.amount AS Importe,
+    r.rental_id AS ID_Alquiler,
+    c.customer_id AS ID_Cliente,
+    (c.first_name || ' ' || c.last_name) AS Nombre_Cliente,
+	ci.city as Ciudad_Cliente,
+	co.country as País_Cliente,
+    s.store_id AS ID_Tienda,
+    (staff.first_name || ' ' || staff.last_name) AS Nombre_Gerente,
+    f.title AS Titulo_Pelicula,
+    cat.name AS Categoria_Pelicula,
+   round( julianday(r.return_date) - julianday(r.rental_date),2) AS Dias_Duracion_Alquiler
+FROM payment p
+JOIN rental r ON p.rental_id = r.rental_id
+JOIN customer c ON p.customer_id = c.customer_id
+JOIN staff staff ON p.staff_id = staff.staff_id
+JOIN store s ON staff.store_id = s.store_id
+JOIN inventory i ON r.inventory_id = i.inventory_id
+JOIN film f ON i.film_id = f.film_id
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category cat ON fc.category_id = cat.category_id
+JOIN address ad ON c.address_id = ad.address_id 
+JOIN city ci ON ad.city_id = ci.city_id
+JOIN country co ON ci.country_id = co.country_id
+ORDER BY ID_Pago
+```
+
+## Preguntas de negocio y consultas SQL (Versión 1)
 
 ### 1. ¿Cuánto recaudamos por mes?
 ```sql
@@ -146,16 +201,17 @@ ORDER BY Dias_Promedio_Alquiler DESC;
 
 Si este análisis se presentara a un gerente del negocio, las acciones priorizadas serían:
 
-1. **La serie temporal presenta meses ausentes (septiembre 2005 – enero 2006) y un último mes incompleto (febrero 2006)**. Antes de usar estos datos para previsiones o decisiones estacionales, sería imprescindible determinar si esos meses no existen en el negocio real o si son un problema de completitud del dataset, ya que una serie impcompleta puede llevar a conclusiones erróneas sobre estacionalidad o tendencias.
-2. **Reforzar el catálogo en las categorías top (Sports, Sci-Fi, Animation)** con nuevas adquisiciones o promociones cruzadas, ya que concentran la mayor facturación pero no muestran una dependencia excesiva de pocos títulos. Es decir, hay margen para escalar sin riesgo de saturar la demanda.
-3. **Diseñar un programa de fidelización para los 599 clientes recurrentes**, dado que son la base estable del negocio; un pequeño incremento en su frecuencia de alquiler tendría más impacto que captar clientes nuevos de forma agresiva.
-4. **Replicar las prácticas de la tienda con mejor ticket promedio en la de menor rendimiento**, ya que la diferencia parece estar más relacionada con gestión comercial que con volumen de inventario.
-5. **Mantener la política actual de duración de alquiler**, dado que no se detectan categorías problemáticas — los recursos de mejora deberían enfocarse en facturación y fidelización, no en esta variable.
+1. **Gobernanza de Datos ante la Brecha Temporal:** La serie histórica presenta una ausencia total de registros entre septiembre de 2005 y enero de 2006, además de un cierre truncado en febrero de 2006. El hallazgo analítico del efecto corte de datos (los 183 alquileres activos sin devolver) confirma un corte abrupto en la recolección de datos y no un cese de actividad comercial. Se recomienda auditar los sistemas transaccionales de origen antes de utilizar estos datos para modelos predictivos de demanda o estacionalidad.
+2. **Diversificación de Catálogo en Categorías Líderes:** Las categorías *Sports*, *Sci-Fi* y *Animation* concentran la mayor facturación global. Dado que el análisis revela que no existe una dependencia crítica de pocos títulos estrella (blockbusters), se concluye que la demanda está saludablemente distribuida. Existe un margen óptimo para escalar el inventario en estas categorías sin riesgo de saturación.
+3. **Optimización del LTV (Lifetime Value) mediante Fidelización:** La base estable y crítica del negocio está soportada por una cartera de **599 clientes únicos recurrentes**. Estratégicamente, resulta mucho más rentable diseñar un programa de fidelización que incremente marginalmente su frecuencia de alquiler actual que ejecutar campañas agresivas y costosas de adquisición de nuevos clientes.
+4. **Estandarización de Prácticas Comerciales por Sucursal:** A pesar de que ambas tiendas igualan su facturación total, la sucursal de **Mike Hillyer** logra un ticket promedio superior (4,25 €) frente a la de Jon Stephens (4,15 €) con un menor volumen físico de transacciones. Se recomienda replicar las estrategias de venta cruzada y el mix de exhibición de categorías de la Tienda 1 para maximizar el rendimiento de la Tienda 2.
+5. **Validación Operativa de los Tiempos de Retención:** Tras aislar rigurosamente las anomalías y registros nulos en el proceso de QA, se demostró que el tiempo medio real de retención de stock se sitúa de manera consistente en **5,03 días de promedio**. Al no detectarse desviaciones ni fricciones críticas entre categorías, se aconseja mantener la política de devoluciones actual y redirigir los esfuerzos hacia la optimización de precios y fidelización.
 
 ## Herramientas utilizadas
 - **SQL** (SQLite) — extracción y transformación de datos
 - **DB Browser for SQLite** — ejecución y prueba de consultas
 - **Google Sheets** — dashboard ejecutivo y visualizaciones
+- **Google Data/Looker Studio** - dasboard profesional automatizado interactivo con filtros y segmentadores
 - **IA(Claude)** - apoyo en documentación y revisión de consultas
 
 ## Autor
