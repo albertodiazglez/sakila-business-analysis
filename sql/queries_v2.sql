@@ -33,8 +33,7 @@ JOIN city ci ON ad.city_id = ci.city_id
 JOIN country co ON ci.country_id = co.country_id						
 ORDER BY ID_Pago	
 
--- Comprobación de todos los registros de alquileres que no se han devuelto (siguen activos)
-	Seleccionar todos los resgitros de alquiler que no se han devuelto					
+-- Comprobación de todos los registros de alquileres que no se han devuelto (siguen activos)				
 	SELECT					
 	p.payment_id AS ID_Pago,					
 	strftime('%Y-%m-%d', p.payment_date) AS Fecha_Completa,					
