@@ -13,9 +13,9 @@ El proyecto ha evolucionado en dos soluciones analíticas interactivas:
 ## Dashboards Ejecutivos
 
 ### 🔹 Versión 2: Centro de Control Dinámico (Looker Studio)
-![Dashboard Looker Studio](images/dashboard_looker(v2).png)
+![Dashboard Looker Studio](images/dashboard_looker_v2.png)
 ### 🔹 Versión 1: Reporte Tabular (Google Sheets)
-![Dashboard Sakila BI](images/dashboard_sakila(v1).png)
+![Dashboard Sakila BI](images/dashboard_sakila_v1.png)
 
 > Nota: el último mes de la serie temporal (2006-02) corresponde a un periodo parcial dentro del dataset original de Sakila, lo que explica la caída brusca de facturación frente al resto de meses.
 
